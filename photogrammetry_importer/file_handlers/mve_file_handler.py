@@ -57,7 +57,7 @@ class MVEFileHandler:
             # Thus, we use the camera information provided in the view folders
 
             # Consume the lines corresponding to the (incomplete) camera information
-            for cam_idx in range(num_cameras):
+            for _ in range(num_cameras):
                 intrinsic_line = MVEFileHandler._readline_as_numbers(
                     input_file, target_type=float
                 )
@@ -199,9 +199,7 @@ class MVEFileHandler:
 
             if add_depth_maps_as_point_cloud:
                 for level in range(9):
-                    depth_ifp = os.path.join(
-                        subdir, "depth-L" + str(level) + ".mvei"
-                    )
+                    depth_ifp = os.path.join(subdir, f"depth-L{str(level)}.mvei")
                     if os.path.isfile(depth_ifp):
                         camera.set_depth_map_callback(
                             MVEFileHandler.read_depth_map,
@@ -211,9 +209,7 @@ class MVEFileHandler:
                         )
                         break
                 if camera.get_depth_map_fp() is None:
-                    log_report(
-                        "WARNING", "No depth map found in " + subdir, op
-                    )
+                    log_report("WARNING", f"No depth map found in {subdir}", op)
 
             cameras.append(camera)
         return cameras

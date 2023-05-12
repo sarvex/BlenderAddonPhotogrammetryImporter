@@ -39,7 +39,7 @@ class ImportColmapOperator(
         path = self.directory
         # Remove trailing slash
         path = os.path.dirname(path)
-        log_report("INFO", "path: " + str(path), self)
+        log_report("INFO", f"path: {str(path)}", self)
 
         self.image_dp = self.get_default_image_path(path, self.image_dp)
         cameras, points, mesh_ifp = ColmapFileHandler.parse_colmap_folder(
@@ -51,9 +51,9 @@ class ImportColmapOperator(
             self,
         )
 
-        log_report("INFO", "Number cameras: " + str(len(cameras)), self)
-        log_report("INFO", "Number points: " + str(len(points)), self)
-        log_report("INFO", "Mesh file path: " + str(mesh_ifp), self)
+        log_report("INFO", f"Number cameras: {len(cameras)}", self)
+        log_report("INFO", f"Number points: {len(points)}", self)
+        log_report("INFO", f"Mesh file path: {str(mesh_ifp)}", self)
 
         reconstruction_collection = add_collection("Reconstruction Collection")
         self.import_photogrammetry_cameras(cameras, reconstruction_collection)

@@ -96,7 +96,7 @@ class ImportMeshroomOperator(
     def execute(self, context):
         """Import a :code:`Meshroom` file/workspace."""
         path = os.path.join(self.directory, self.filepath)
-        log_report("INFO", "path: " + str(path), self)
+        log_report("INFO", f"path: {str(path)}", self)
 
         self.image_dp = self.get_default_image_path(path, self.image_dp)
         (
@@ -118,10 +118,10 @@ class ImportMeshroomOperator(
             self,
         )
         self.image_dp = image_dp
-        log_report("INFO", "image_dp: " + str(self.image_dp), self)
+        log_report("INFO", f"image_dp: {str(self.image_dp)}", self)
 
-        log_report("INFO", "Number cameras: " + str(len(cameras)), self)
-        log_report("INFO", "Number points: " + str(len(points)), self)
+        log_report("INFO", f"Number cameras: {len(cameras)}", self)
+        log_report("INFO", f"Number points: {len(points)}", self)
 
         reconstruction_collection = add_collection("Reconstruction Collection")
         self.import_photogrammetry_cameras(cameras, reconstruction_collection)

@@ -35,7 +35,7 @@ class ExportScreenshotImageOperator(bpy.types.Operator, ExportHelper):
 
         panel_settings = context.scene.opengl_panel_settings
         filename_ext = panel_settings.screenshot_file_format
-        ofp = self.filepath + "." + filename_ext
+        ofp = f"{self.filepath}.{filename_ext}"
 
         # Get panel settings
         full_screenshot = not panel_settings.only_3d_view
@@ -129,11 +129,9 @@ class ExportScreenshotAnimationOperator(bpy.types.Operator, ExportHelper):
             bpy.context.scene.frame_set(idx)
             _update_ui(context)
 
-            current_frame_fn = str(idx).zfill(5) + "." + filename_ext
+            current_frame_fn = f"{str(idx).zfill(5)}.{filename_ext}"
             current_frame_fp = os.path.join(output_dp, current_frame_fn)
-            log_report(
-                "INFO", "Output File Path: " + str(current_frame_fp), self
-            )
+            log_report("INFO", f"Output File Path: {str(current_frame_fp)}", self)
             if full_screenshot:
                 bpy.ops.screen.screenshot(
                     filepath=current_frame_fp,

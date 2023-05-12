@@ -49,15 +49,9 @@ class ImportOpen3DOperator(
 
         Overwrites the method in :code:`CameraImporter`.
         """
-        intrinsic_missing = False
-        for cam in cameras:
-            if not cam.has_intrinsics():
-                intrinsic_missing = True
-                break
-
+        intrinsic_missing = any(not cam.has_intrinsics() for cam in cameras)
         if not intrinsic_missing:
             log_report("INFO", "Using intrinsics from file (.json).", self)
-            return cameras, True
         else:
             log_report(
                 "INFO",
@@ -103,16 +97,14 @@ class ImportOpen3DOperator(
                     cy=default_cy,
                 )
                 cam.set_calibration_mat(intrinsics)
-            return cameras, True
+
+        return cameras, True
 
     def _image_size_initialized(self, cameras):
-        missing_data = False
-        for camera in cameras:
-            if camera.width is None or camera.height is None:
-                missing_data = True
-                break
-        is_initialized = not missing_data
-        return is_initialized
+        missing_data = any(
+            camera.width is None or camera.height is None for camera in cameras
+        )
+        return not missing_data
 
     def set_image_size_of_cameras(self, cameras):
         """Enhance the imported cameras with image related information.
@@ -130,16 +122,16 @@ class ImportOpen3DOperator(
     def execute(self, context):
         """Import an :code:`Open3D` file."""
         path = os.path.join(self.directory, self.filepath)
-        log_report("INFO", "path: " + str(path), self)
+        log_report("INFO", f"path: {str(path)}", self)
 
         self.image_dp = self.get_default_image_path(path, self.image_dp)
-        log_report("INFO", "image_dp: " + str(self.image_dp), self)
+        log_report("INFO", f"image_dp: {str(self.image_dp)}", self)
 
         cameras = Open3DFileHandler.parse_open3d_file(
             path, self.image_dp, self.image_fp_type, self
         )
 
-        log_report("INFO", "Number cameras: " + str(len(cameras)), self)
+        log_report("INFO", f"Number cameras: {len(cameras)}", self)
 
         reconstruction_collection = add_collection("Reconstruction Collection")
         self.import_photogrammetry_cameras(cameras, reconstruction_collection)

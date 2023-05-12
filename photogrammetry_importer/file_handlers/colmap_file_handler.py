@@ -54,38 +54,31 @@ class ColmapFileHandler:
         name = cam.model
         params = cam.params
         fx, fy, cx, cy, skew, r = None, None, None, None, None, None
-        if name == "SIMPLE_PINHOLE":
-            fx, cx, cy = params
-        elif name == "PINHOLE":
-            fx, fy, cx, cy = params
-        elif name == "SIMPLE_RADIAL":
-            fx, cx, cy, r = params
-        elif name == "RADIAL":
-            fx, cx, cy, k1, k2 = params
-            r = [k1, k2]
+        if name == "FOV":
+            fx, fy, cx, cy, r = params
+        elif name == "FULL_OPENCV":
+            fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6 = params
+            r = [k1, k2, p1, p2, k3, k4, k5, k6]
         elif name == "OPENCV":
             fx, fy, cx, cy, k1, k2, p1, p2 = params
             r = [k1, k2, p1, p2]
         elif name == "OPENCV_FISHEYE":
             fx, fy, cx, cy, k1, k2, k3, k4 = params
             r = [k1, k2, k3, k4]
-        elif name == "FULL_OPENCV":
-            fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6 = params
-            r = [k1, k2, p1, p2, k3, k4, k5, k6]
-        elif name == "FOV":
-            fx, fy, cx, cy, r = params
-        elif name == "SIMPLE_RADIAL_FISHEYE":
-            fx, cx, cy, r = params
-        elif name == "RADIAL_FISHEYE":
+        elif name == "PERSPECTIVE":
+            fx, fy, cx, cy, skew = params
+        elif name == "PINHOLE":
+            fx, fy, cx, cy = params
+        elif name in ["RADIAL", "RADIAL_FISHEYE"]:
             fx, cx, cy, k1, k2 = params
             r = [k1, k2]
+        elif name == "SIMPLE_PINHOLE":
+            fx, cx, cy = params
+        elif name in ["SIMPLE_RADIAL", "SIMPLE_RADIAL_FISHEYE"]:
+            fx, cx, cy, r = params
         elif name == "THIN_PRISM_FISHEYE":
             fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, sx1, sy1 = params
             r = [k1, k2, p1, p2, k3, k4, sx1, sy1]
-        # PERSPECTIVE is defined in this Colmap fork
-        #  https://github.com/Kai-46/VisSatSatelliteStereo
-        elif name == "PERSPECTIVE":
-            fx, fy, cx, cy, skew = params
         if fy is None:
             fy = fx
         if skew is None:
@@ -156,11 +149,9 @@ class ColmapFileHandler:
             )
 
             if depth_map_idp is not None:
-                geometric_ifp = os.path.join(
-                    depth_map_idp, col_image.name + ".geometric.bin"
-                )
+                geometric_ifp = os.path.join(depth_map_idp, f"{col_image.name}.geometric.bin")
                 photometric_ifp = os.path.join(
-                    depth_map_idp, col_image.name + ".photometric.bin"
+                    depth_map_idp, f"{col_image.name}.photometric.bin"
                 )
                 if os.path.isfile(geometric_ifp):
                     depth_map_ifp = geometric_ifp
@@ -202,12 +193,11 @@ class ColmapFileHandler:
         txt_list = ["cameras.txt", "images.txt", "points3D.txt"]
         bin_list = ["cameras.bin", "images.bin", "points3D.bin"]
         if len(set(ifp_s).intersection(txt_list)) == 3:
-            ext = ".txt"
+            return ".txt"
         elif len(set(ifp_s).intersection(bin_list)) == 3:
-            ext = ".bin"
+            return ".bin"
         else:
-            ext = None
-        return ext
+            return None
 
     @staticmethod
     def _is_valid_model_folder(idp):
@@ -218,13 +208,11 @@ class ColmapFileHandler:
     def _is_valid_workspace_folder(idp):
         elements = os.listdir(idp)
         valid = True
-        if "sparse" in elements:
-            valid = ColmapFileHandler._is_valid_model_folder(
-                os.path.join(idp, "sparse")
-            )
-        else:
-            valid = False
-        return valid
+        return (
+            ColmapFileHandler._is_valid_model_folder(os.path.join(idp, "sparse"))
+            if "sparse" in elements
+            else False
+        )
 
     @staticmethod
     def parse_colmap_model_folder(
@@ -236,7 +224,7 @@ class ColmapFileHandler:
         op=None,
     ):
         """Parse a :code:`Colmap` model."""
-        log_report("INFO", "Parse Colmap model folder: " + model_idp, op)
+        log_report("INFO", f"Parse Colmap model folder: {model_idp}", op)
 
         assert ColmapFileHandler._is_valid_model_folder(model_idp)
         ext = ColmapFileHandler._get_model_folder_ext(model_idp)
@@ -290,7 +278,7 @@ class ColmapFileHandler:
         op=None,
     ):
         """Parse a :code:`Colmap` model or a :code:`Colmap` workspace."""
-        log_report("INFO", "idp: " + str(idp), op)
+        log_report("INFO", f"idp: {str(idp)}", op)
 
         if ColmapFileHandler._is_valid_model_folder(idp):
             model_idp = idp
@@ -310,7 +298,7 @@ class ColmapFileHandler:
             log_report("ERROR", "Invalid colmap model / workspace", op)
             assert False, "Invalid colmap model / workspace"
 
-        log_report("INFO", "image_dp: " + image_dp, op)
+        log_report("INFO", f"image_dp: {image_dp}", op)
         cameras, points = ColmapFileHandler.parse_colmap_model_folder(
             model_idp,
             image_dp,
@@ -325,7 +313,7 @@ class ColmapFileHandler:
     @staticmethod
     def write_colmap_model(odp, cameras, points, op=None):
         """Write cameras and points as :code:`Colmap` model."""
-        log_report("INFO", "Write Colmap model folder: " + odp, op)
+        log_report("INFO", f"Write Colmap model folder: {odp}", op)
 
         if not os.path.isdir(odp):
             os.mkdir(odp)
@@ -342,10 +330,10 @@ class ColmapFileHandler:
 
         colmap_cams = {}
         colmap_images = {}
-        for cam in cameras:
+        # TODO Support the "PINHOLE" camera model
+        colmap_camera_model_name = "SIMPLE_PINHOLE"
 
-            # TODO Support the "PINHOLE" camera model
-            colmap_camera_model_name = "SIMPLE_PINHOLE"
+        for cam in cameras:
 
             pp = cam.get_principal_point()
             colmap_cam = ColmapCamera(

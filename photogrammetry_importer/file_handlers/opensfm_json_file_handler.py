@@ -31,17 +31,7 @@ class OpenSfMJSONFileHandler:
         ]
         projection_type = json_camera_intrinsics["projection_type"]
 
-        if projection_type == "perspective":
-            focal_length = json_camera_intrinsics["focal"] * max(width, height)
-            cx = width / 2
-            cy = height / 2
-            log_report(
-                "WARNING",
-                "Principal point not provided, setting it to the image"
-                + " center.",
-                op,
-            )
-        elif projection_type == "brown":
+        if projection_type == "brown":
             fx = json_camera_intrinsics["focal_x"] * max(width, height)
             fy = json_camera_intrinsics["focal_y"] * max(width, height)
             if fx != fy:
@@ -54,6 +44,16 @@ class OpenSfMJSONFileHandler:
             focal_length = (fx + fy) * 0.5
             cx = json_camera_intrinsics["c_x"]
             cy = json_camera_intrinsics["c_y"]
+        elif projection_type == "perspective":
+            focal_length = json_camera_intrinsics["focal"] * max(width, height)
+            cx = width / 2
+            cy = height / 2
+            log_report(
+                "WARNING",
+                "Principal point not provided, setting it to the image"
+                + " center.",
+                op,
+            )
         else:
             log_report("ERROR", "Projection Type not supported!", op)
             assert False
@@ -75,27 +75,25 @@ class OpenSfMJSONFileHandler:
         theta = np.linalg.norm(rodrigues_vec)
         if (
             theta < sys.float_info.epsilon
-        ):  # For most systems: theta < 2.220446049250313e-16
-            rot_mat = np.eye(3, dtype=float)
-        else:
-            r = rodrigues_vec / theta
-            I = np.eye(3, dtype=float)
-            r_rT = np.array(
-                [
-                    [r[0] * r[0], r[0] * r[1], r[0] * r[2]],
-                    [r[1] * r[0], r[1] * r[1], r[1] * r[2]],
-                    [r[2] * r[0], r[2] * r[1], r[2] * r[2]],
-                ]
-            )
-            r_cross = np.array(
-                [[0, -r[2], r[1]], [r[2], 0, -r[0]], [-r[1], r[0], 0]]
-            )
-            rot_mat = (
-                math.cos(theta) * I
-                + (1 - math.cos(theta)) * r_rT
-                + math.sin(theta) * r_cross
-            )
-        return rot_mat
+        ):
+            return np.eye(3, dtype=float)
+        r = rodrigues_vec / theta
+        I = np.eye(3, dtype=float)
+        r_rT = np.array(
+            [
+                [r[0] * r[0], r[0] * r[1], r[0] * r[2]],
+                [r[1] * r[0], r[1] * r[1], r[1] * r[2]],
+                [r[2] * r[0], r[2] * r[1], r[2] * r[2]],
+            ]
+        )
+        r_cross = np.array(
+            [[0, -r[2], r[1]], [r[2], 0, -r[0]], [-r[1], r[0], 0]]
+        )
+        return (
+            math.cos(theta) * I
+            + (1 - math.cos(theta)) * r_rT
+            + math.sin(theta) * r_cross
+        )
 
     @staticmethod
     def _parse_cameras(
@@ -177,7 +175,7 @@ class OpenSfMJSONFileHandler:
         """Parse a :code:`OpenSfM` (:code:`.json`) file."""
 
         log_report("INFO", "parse_opensfm_file: ...", op)
-        log_report("INFO", "input_opensfm_fp: " + input_opensfm_fp, op)
+        log_report("INFO", f"input_opensfm_fp: {input_opensfm_fp}", op)
         input_file = open(input_opensfm_fp, "r")
         json_data = json.load(input_file)
         reconstruction_data = json_data[reconstruction_idx]

@@ -131,11 +131,10 @@ class Camera:
     def has_undistorted_absolute_fp(self):
         """Determine if there is an absolute path to the undistorted image."""
         requirements = False
-        if self.image_fp_type == Camera.IMAGE_FP_TYPE_NAME:
-            requirements = (self.image_dp is not None) and (
-                self._undistorted_relative_fp is not None
-            )
-        elif self.image_fp_type == Camera.IMAGE_FP_TYPE_RELATIVE:
+        if self.image_fp_type in [
+            Camera.IMAGE_FP_TYPE_NAME,
+            Camera.IMAGE_FP_TYPE_RELATIVE,
+        ]:
             requirements = (self.image_dp is not None) and (
                 self._undistorted_relative_fp is not None
             )
@@ -175,13 +174,12 @@ class Camera:
     def get_field_of_view(self):
         """Return the field of view corresponding to the focal length."""
         assert self.width is not None and self.height is not None
-        angle = (
+        return (
             math.atan(
                 max(self.width, self.height) / (self.get_focal_length() * 2.0)
             )
             * 2.0
         )
-        return angle
 
     def has_intrinsics(self):
         """Return wether the intrinsic parameters have been defined or not."""
@@ -215,8 +213,7 @@ class Camera:
         """Return wether the principal point has been defined or not."""
         cx_zero = np.isclose(self._calibration_mat[0][2], 0.0)
         cy_zero = np.isclose(self._calibration_mat[1][2], 0.0)
-        initialized = (not cx_zero) and (not cy_zero)
-        return initialized
+        return (not cx_zero) and (not cy_zero)
 
     def is_panoramic(self):
         """Return wether the camera model is a panoramic camera or not."""
@@ -305,8 +302,7 @@ class Camera:
         # Test if rotation_mat is really a rotation matrix
         # (i.e. det = -1 or det = 1)
         det = np.linalg.det(some_mat)
-        res = np.isclose(det, 1) or np.isclose(det, -1)
-        return res
+        return np.isclose(det, 1) or np.isclose(det, -1)
 
     @staticmethod
     def quaternion_to_rotation_matrix(q):
@@ -352,25 +348,24 @@ class Camera:
             q[1] = (m[2][1] - m[1][2]) / (4.0 * q[0])
             q[2] = (m[0][2] - m[2][0]) / (4.0 * q[0])
             q[3] = (m[1][0] - m[0][1]) / (4.0 * q[0])
+        elif m[0][0] > m[1][1] and m[0][0] > m[2][2]:
+            s = 2.0 * math.sqrt(1.0 + m[0][0] - m[1][1] - m[2][2])
+            q[1] = 0.25 * s
+            q[2] = (m[0][1] + m[1][0]) / s
+            q[3] = (m[0][2] + m[2][0]) / s
+            q[0] = (m[1][2] - m[2][1]) / s
+        elif m[1][1] > m[2][2]:
+            s = 2.0 * math.sqrt(1.0 + m[1][1] - m[0][0] - m[2][2])
+            q[1] = (m[0][1] + m[1][0]) / s
+            q[2] = 0.25 * s
+            q[3] = (m[1][2] + m[2][1]) / s
+            q[0] = (m[0][2] - m[2][0]) / s
         else:
-            if m[0][0] > m[1][1] and m[0][0] > m[2][2]:
-                s = 2.0 * math.sqrt(1.0 + m[0][0] - m[1][1] - m[2][2])
-                q[1] = 0.25 * s
-                q[2] = (m[0][1] + m[1][0]) / s
-                q[3] = (m[0][2] + m[2][0]) / s
-                q[0] = (m[1][2] - m[2][1]) / s
-            elif m[1][1] > m[2][2]:
-                s = 2.0 * math.sqrt(1.0 + m[1][1] - m[0][0] - m[2][2])
-                q[1] = (m[0][1] + m[1][0]) / s
-                q[2] = 0.25 * s
-                q[3] = (m[1][2] + m[2][1]) / s
-                q[0] = (m[0][2] - m[2][0]) / s
-            else:
-                s = 2.0 * math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1])
-                q[1] = (m[0][2] + m[2][0]) / s
-                q[2] = (m[1][2] + m[2][1]) / s
-                q[3] = 0.25 * s
-                q[0] = (m[0][1] - m[1][0]) / s
+            s = 2.0 * math.sqrt(1.0 + m[2][2] - m[0][0] - m[1][1])
+            q[1] = (m[0][2] + m[2][0]) / s
+            q[2] = (m[1][2] + m[2][1]) / s
+            q[3] = 0.25 * s
+            q[0] = (m[0][1] - m[1][0]) / s
         return q
 
     def set_depth_map_callback(
@@ -419,8 +414,7 @@ class Camera:
         cam_coords = self.convert_depth_map_to_cam_coords(
             depth_map_display_sparsity
         )
-        world_coords = self.convert_cam_coords_to_world_coords(cam_coords)
-        return world_coords
+        return self.convert_cam_coords_to_world_coords(cam_coords)
 
     def convert_cam_coords_to_world_coords(self, cam_coords):
         """Convert camera coordinates to world coordinates."""
@@ -430,8 +424,7 @@ class Camera:
         world_coords_hom = (
             self.get_4x4_cam_to_world_mat().dot(cam_coords_hom.T).T
         )
-        world_coords = np.delete(world_coords_hom, 3, 1)
-        return world_coords
+        return np.delete(world_coords_hom, 3, 1)
 
     def convert_depth_map_to_cam_coords(self, depth_map_display_sparsity=100):
         """Convert the depth map to points in camera coordinates."""
@@ -551,11 +544,9 @@ class Camera:
         else:
             assert False
 
-        cam_coords = np.dstack(
+        return np.dstack(
             (x_coords_filtered, y_coords_filtered, z_coords_filtered)
         )[0]
-
-        return cam_coords
 
     @staticmethod
     def _split_intrinsic_mat(intrinsic_mat):

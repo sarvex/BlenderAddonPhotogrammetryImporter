@@ -131,7 +131,7 @@ class VisualSfMFileHandler:
             # <Point>  = <XYZ> <RGB> <number of measurements> <List of Measurements>
             point_line = input_file.readline()
             point_line_elements = (point_line.rstrip()).split()
-            xyz_vec = list(map(float, point_line_elements[0:3]))
+            xyz_vec = list(map(float, point_line_elements[:3]))
             rgb_vec = list(map(int, point_line_elements[3:6]))
             current_point = Point(
                 coord=xyz_vec, color=rgb_vec, id=point_index, scalars=None
@@ -174,7 +174,7 @@ class VisualSfMFileHandler:
         op=None,
     ):
         """Parse a :code:`VisualSfM` (:code:`.nvm`) file."""
-        log_report("INFO", "Parse NVM file: " + input_visual_fsm_file_name, op)
+        log_report("INFO", f"Parse NVM file: {input_visual_fsm_file_name}", op)
         input_file = open(input_visual_fsm_file_name, "r")
         # Documentation of *.NVM data format
         # http://ccwu.me/vsfm/doc.html#nvm
@@ -193,9 +193,7 @@ class VisualSfMFileHandler:
 
         amount_cameras = int((input_file.readline()).rstrip())
         log_report(
-            "INFO",
-            "Amount Cameras (Images in NVM file): " + str(amount_cameras),
-            op,
+            "INFO", f"Amount Cameras (Images in NVM file): {amount_cameras}", op
         )
 
         cameras = cls._parse_cameras(
@@ -235,7 +233,7 @@ class VisualSfMFileHandler:
         #   'NVM_V3 FixedK fx cx fy cy r'
 
         calib_mat = cameras[0].get_calibration_mat()
-        log_report("INFO", "calib_mat: " + str(calib_mat), op)
+        log_report("INFO", f"calib_mat: {str(calib_mat)}", op)
         # radial_dist = None
         # if cameras[0].has_radial_distortion():
         #     radial_dist = cameras[0].has_radial_distortion()
@@ -244,30 +242,30 @@ class VisualSfMFileHandler:
         for cam in cameras:
             log_report(
                 "INFO",
-                "cam.get_calibration_mat(): " + str(cam.get_calibration_mat()),
+                f"cam.get_calibration_mat(): {str(cam.get_calibration_mat())}",
                 op,
             )
             if not np.allclose(cam.get_calibration_mat(), calib_mat):
-                log_report("INFO", "calib_mat: " + str(calib_mat), op)
+                log_report("INFO", f"calib_mat: {str(calib_mat)}", op)
                 fixed_calibration = False
                 break
-        log_report("INFO", "fixed_calibration: " + str(fixed_calibration), op)
+        log_report("INFO", f"fixed_calibration: {str(fixed_calibration)}", op)
         if fixed_calibration:
             fl = "NVM_V3 FixedK"
-            fl += " " + str(calib_mat[0][0])
-            fl += " " + str(calib_mat[0][2])
-            fl += " " + str(calib_mat[1][1])
-            fl += " " + str(calib_mat[1][2])
-            fl += " " + str(0)  # TODO Radial distortion
+            fl += f" {str(calib_mat[0][0])}"
+            fl += f" {str(calib_mat[0][2])}"
+            fl += f" {str(calib_mat[1][1])}"
+            fl += f" {str(calib_mat[1][2])}"
+            fl += ' 0'
         else:
             fl = "NVM_V3"
-        log_report("INFO", "fl: " + fl, op)
+        log_report("INFO", f"fl: {fl}", op)
         log_report("INFO", "create_nvm_first_line: Done", op)
         return fl
 
     @staticmethod
     def _nvm_line(content):
-        return content + " " + os.linesep
+        return f"{content} {os.linesep}"
 
     @classmethod
     def write_visualsfm_file(
@@ -275,20 +273,13 @@ class VisualSfMFileHandler:
     ):
         """Write cameras and points as :code:`.nvm` file."""
 
-        log_report("INFO", "Write NVM file: " + output_nvm_file_name, op)
+        log_report("INFO", f"Write NVM file: {output_nvm_file_name}", op)
 
-        nvm_content = []
-        nvm_content.append(
-            cls._nvm_line(cls._create_nvm_first_line(cameras, op))
-        )
+        nvm_content = [cls._nvm_line(cls._create_nvm_first_line(cameras, op))]
         nvm_content.append(cls._nvm_line(""))
         amount_cameras = len(cameras)
         nvm_content.append(cls._nvm_line(str(amount_cameras)))
-        log_report(
-            "INFO",
-            "Amount Cameras (Images in NVM file):" + str(amount_cameras),
-            op,
-        )
+        log_report("INFO", f"Amount Cameras (Images in NVM file):{amount_cameras}", op)
 
         # Write the camera section
         # From the VSFM docs:
@@ -305,14 +296,12 @@ class VisualSfMFileHandler:
             )
             current_line += " " + "0"  # TODO USE RADIAL DISTORTION
             current_line += " " + "0"
-            nvm_content.append(current_line + " " + os.linesep)
+            nvm_content.append(f"{current_line} {os.linesep}")
 
-        nvm_content.append(" " + os.linesep)
+        nvm_content.append(f" {os.linesep}")
         number_points = len(points)
-        nvm_content.append(str(number_points) + " " + os.linesep)
-        log_report(
-            "INFO", "Found " + str(number_points) + " object points", op
-        )
+        nvm_content.append(f"{number_points} {os.linesep}")
+        log_report("INFO", f"Found {number_points} object points", op)
 
         num_features = 2
         image_idx = 0
@@ -329,39 +318,25 @@ class VisualSfMFileHandler:
             # current_line += ' ' + str(len(point.measurements))
             # for measurement in point.measurements:
             #     current_line += ' ' + str(measurement)
-            current_line += " " + str(num_features)
-            for feature in range(num_features):
-                current_line += (
-                    " "
-                    + str(image_idx)
-                    + " "
-                    + str(feature_idx)
-                    + " "
-                    + str(x)
-                    + " "
-                    + str(y)
-                )
+            current_line += f" {num_features}"
+            for _ in range(num_features):
+                current_line += f" {image_idx} {feature_idx} {x} {y}"
 
-            nvm_content.append(current_line + " " + os.linesep)
+            nvm_content.append(f"{current_line} {os.linesep}")
 
-        nvm_content.append(" " + os.linesep)
-        nvm_content.append(" " + os.linesep)
-        nvm_content.append(" " + os.linesep)
-        nvm_content.append("0" + os.linesep)
-        nvm_content.append(" " + os.linesep)
-        nvm_content.append(
-            "#the last part of NVM file points to the PLY files " + os.linesep
+        nvm_content.extend(
+            (
+                f" {os.linesep}",
+                f" {os.linesep}",
+                f" {os.linesep}",
+                f"0{os.linesep}",
+                f" {os.linesep}",
+                f"#the last part of NVM file points to the PLY files {os.linesep}",
+                f"#the first number is the number of associated PLY files {os.linesep}",
+                f"#each following number gives a model-index that has PLY {os.linesep}",
+                f"0{os.linesep}",
+            )
         )
-        nvm_content.append(
-            "#the first number is the number of associated PLY files "
-            + os.linesep
-        )
-        nvm_content.append(
-            "#each following number gives a model-index that has PLY "
-            + os.linesep
-        )
-        nvm_content.append("0" + os.linesep)
-
         output_file = open(output_nvm_file_name, "wb")
         output_file.writelines([item.encode() for item in nvm_content])
 

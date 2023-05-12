@@ -41,18 +41,16 @@ class ExportOperator(bpy.types.Operator):
 
         log_report(
             "INFO",
-            "render_resolution_width: " + str(render_resolution_width),
+            f"render_resolution_width: {str(render_resolution_width)}",
             self,
         )
         log_report(
             "INFO",
-            "render_resolution_height: " + str(render_resolution_height),
+            f"render_resolution_height: {str(render_resolution_height)}",
             self,
         )
         log_report(
-            "INFO",
-            "focal_length_in_pixel: " + str(focal_length_in_pixel),
-            self,
+            "INFO", f"focal_length_in_pixel: {str(focal_length_in_pixel)}", self
         )
 
         log_report("INFO", "get_calibration_mat: Done", self)
@@ -64,11 +62,7 @@ class ExportOperator(bpy.types.Operator):
         # of the corresponding matrix_world contains a pure rotation.
         # Otherwise, it also contains scale or shear information
         if not np.allclose(tuple(blender_camera.scale), (1, 1, 1)):
-            log_report(
-                "ERROR",
-                "blender_camera.scale: " + str(blender_camera.scale),
-                self,
-            )
+            log_report("ERROR", f"blender_camera.scale: {str(blender_camera.scale)}", self)
             assert False
 
         camera_matrix = np.array(blender_camera.matrix_world)
@@ -101,7 +95,7 @@ class ExportOperator(bpy.types.Operator):
         for obj in bpy.context.selected_objects:
             if obj.type == "CAMERA":
                 obj_name = str(obj.name).replace(" ", "_")
-                log_report("INFO", "obj_name: " + obj_name, self)
+                log_report("INFO", f"obj_name: {obj_name}", self)
                 calibration_mat = self._get_calibration_mat(obj)
                 # log_report('INFO', 'calibration_mat:', self)
                 # log_report('INFO', str(calibration_mat), self)
@@ -138,7 +132,6 @@ class ExportOperator(bpy.types.Operator):
                         )
                         point_index += 1
                     points += obj_points
-                # Option 2: Empty with OpenGL information
                 elif (
                     "particle_coords" in obj
                     and "particle_colors" in obj
@@ -151,7 +144,7 @@ class ExportOperator(bpy.types.Operator):
                         scaled_color = [round(value * 255) for value in color]
                         obj_points.append(
                             Point(
-                                coord=coord_world,
+                                coord_world=coord_world,
                                 color=scaled_color[:3],
                                 id=point_index,
                                 scalars=[],

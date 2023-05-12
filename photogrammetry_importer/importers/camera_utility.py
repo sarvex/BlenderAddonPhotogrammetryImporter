@@ -48,16 +48,12 @@ def adjust_render_settings_if_possible(cameras, op=None):
     if len(cameras) == 0:
         return
 
-    possible = True
     width = cameras[0].width
     height = cameras[0].height
 
-    # Check if the cameras have same resolution
-    for cam in cameras:
-        if cam.width != width or cam.height != height:
-            possible = False
-            break
-
+    possible = not any(
+        cam.width != width or cam.height != height for cam in cameras
+    )
     if possible:
         bpy.context.scene.render.resolution_x = width
         bpy.context.scene.render.resolution_y = height
@@ -114,10 +110,7 @@ def _get_camera_obj_gui_str(camera):
     # Replace special characters
     # image_fp_clean = image_fp.replace("/", "_").replace("\\", "_").replace(":", "_")
     image_fp_stem = os.path.splitext(camera.get_relative_fp())[0]
-    # Blender supports only object names with length 63
-    # However, we need also space for additional suffixes
-    image_fp_suffix = image_fp_stem[-40:]
-    return image_fp_suffix
+    return image_fp_stem[-40:]
 
 
 def invert_y_and_z_axis(input_matrix_or_vector):
@@ -138,7 +131,7 @@ def _get_world_matrix_from_translation_vec(translation_vec, rotation):
     t = Vector(translation_vec).to_4d()
     camera_rotation = Matrix()
     for row in range(3):
-        camera_rotation[row][0:3] = rotation[row]
+        camera_rotation[row][:3] = rotation[row]
 
     camera_rotation.transpose()  # = Inverse rotation
 
@@ -222,27 +215,22 @@ def add_cameras(
     if depth_map_id_or_name_str == "":
         depth_map_indices = None
     else:
-        depth_map_indices = []
         cam_rel_fp_to_idx = {}
         for idx, camera in enumerate(cameras):
             rel_fp = camera.get_relative_fp()
             cam_rel_fp_to_idx[rel_fp] = idx
+        depth_map_indices = []
         for id_or_name in depth_map_id_or_name_str.split(" "):
             if is_int(id_or_name):
                 depth_map_indices.append(int(id_or_name))
+            elif id_or_name in cam_rel_fp_to_idx:
+                depth_map_indices.append(cam_rel_fp_to_idx[id_or_name])
             else:
-                if id_or_name in cam_rel_fp_to_idx:
-                    depth_map_indices.append(cam_rel_fp_to_idx[id_or_name])
-                else:
-                    log_report(
-                        "WARNING",
-                        "Could not find depth map name "
-                        + id_or_name
-                        + ". "
-                        + "Possible values are: "
-                        + str(cam_rel_fp_to_idx.keys()),
-                        op,
-                    )
+                log_report(
+                    "WARNING",
+                    f"Could not find depth map name {id_or_name}. Possible values are: {str(cam_rel_fp_to_idx.keys())}",
+                    op,
+                )
 
     # Adding cameras and image planes:
     for index, camera in enumerate(cameras):
@@ -250,7 +238,7 @@ def add_cameras(
         # camera_name = "Camera %d" % index     # original code
         # Replace the camera name so it matches the image name (without extension)
         blender_image_name_stem = _get_camera_obj_gui_str(camera)
-        camera_name = blender_image_name_stem + "_cam"
+        camera_name = f"{blender_image_name_stem}_cam"
         camera_object = add_camera_object(
             camera, camera_name, camera_collection
         )
@@ -265,12 +253,10 @@ def add_cameras(
             image_path = camera.get_absolute_fp()
 
         if not os.path.isfile(image_path):
-            log_report(
-                "WARNING", "Could not find image at " + str(image_path), op
-            )
+            log_report("WARNING", f"Could not find image at {str(image_path)}", op)
             continue
         else:
-            log_report("INFO", "Found image at " + str(image_path), op)
+            log_report("INFO", f"Found image at {str(image_path)}", op)
 
         blender_image = bpy.data.images.load(image_path)
 
@@ -283,12 +269,11 @@ def add_cameras(
         if add_image_planes and not camera.is_panoramic():
             # Group image plane and camera:
             camera_image_plane_pair_collection_current = add_collection(
-                "Camera Image Plane Pair Collection %s"
-                % blender_image_name_stem,
+                f"Camera Image Plane Pair Collection {blender_image_name_stem}",
                 camera_image_plane_pair_collection,
             )
 
-            image_plane_name = blender_image_name_stem + "_image_plane"
+            image_plane_name = f"{blender_image_name_stem}_image_plane"
 
             image_plane_obj = add_camera_image_plane(
                 camera_object.matrix_world,
@@ -314,14 +299,12 @@ def add_cameras(
         if camera.get_depth_map_fp() is None:
             continue
 
-        if depth_map_indices is not None:
-            if index not in depth_map_indices:
-                continue
+        if depth_map_indices is not None and index not in depth_map_indices:
+            continue
 
         # Group image plane and camera:
         camera_depth_map_pair_collection_current = add_collection(
-            "Camera Depth Map Pair Collection %s"
-            % os.path.basename(camera.get_depth_map_fp()),
+            f"Camera Depth Map Pair Collection {os.path.basename(camera.get_depth_map_fp())}",
             camera_depth_map_pair_collection,
         )
 
@@ -353,7 +336,7 @@ def add_cameras(
             depth_map_anchor_handle
         )
 
-    log_report("INFO", "Duration: " + str(stop_watch.get_elapsed_time()), op)
+    log_report("INFO", f"Duration: {str(stop_watch.get_elapsed_time())}", op)
     log_report("INFO", "Adding Cameras: Done", op)
 
 
@@ -397,7 +380,7 @@ def add_camera_image_plane(
 
     corners = ((-0.5, -0.5), (+0.5, -0.5), (+0.5, +0.5), (-0.5, +0.5))
     points = [
-        (plane_center + (c[0] + shift_x) * right + (c[1] + shift_y) * up)[0:3]
+        (plane_center + (c[0] + shift_x) * right + (c[1] + shift_y) * up)[:3]
         for c in corners
     ]
     mesh.from_pydata(points, [], [[0, 1, 2, 3]])

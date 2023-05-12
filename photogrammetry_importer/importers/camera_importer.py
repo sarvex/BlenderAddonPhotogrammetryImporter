@@ -284,14 +284,14 @@ class CameraImporter:
             or draw_everything
         ):
             image_box = camera_box.box()
-            if draw_focal_length or draw_everything:
-                image_box.prop(self, "default_focal_length")
-            if draw_image_size or draw_everything:
-                image_box.prop(self, "default_width")
-                image_box.prop(self, "default_height")
-            if draw_principal_point or draw_everything:
-                image_box.prop(self, "default_pp_x")
-                image_box.prop(self, "default_pp_y")
+        if draw_focal_length or draw_everything:
+            image_box.prop(self, "default_focal_length")
+        if draw_image_size or draw_everything:
+            image_box.prop(self, "default_width")
+            image_box.prop(self, "default_height")
+        if draw_principal_point or draw_everything:
+            image_box.prop(self, "default_pp_x")
+            image_box.prop(self, "default_pp_y")
 
         import_camera_box = camera_box.box()
         import_camera_box.prop(self, "import_cameras")
@@ -353,12 +353,7 @@ class CameraImporter:
 
     @staticmethod
     def _principal_points_initialized(cameras):
-        principal_points_initialized = True
-        for camera in cameras:
-            if not camera.has_principal_point():
-                principal_points_initialized = False
-                break
-        return principal_points_initialized
+        return all(camera.has_principal_point() for camera in cameras)
 
     @staticmethod
     def _set_principal_point_for_cameras(

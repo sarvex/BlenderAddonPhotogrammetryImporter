@@ -33,7 +33,7 @@ class SaveOpenGLRenderImageOperator(bpy.types.Operator):
         save_point_size = context.scene.opengl_panel_settings.save_point_size
         cam = get_selected_camera()
         image_name = "OpenGL Render"
-        log_report("INFO", "image_name: " + image_name, self)
+        log_report("INFO", f"image_name: {image_name}", self)
         draw_manager = DrawManager.get_singleton()
         coords, colors = draw_manager.get_coords_and_colors(visible_only=True)
         render_opengl_image(image_name, cam, coords, colors, save_point_size)
@@ -64,8 +64,8 @@ class ExportOpenGLRenderImageOperator(bpy.types.Operator, ExportHelper):
         save_point_size = scene.opengl_panel_settings.save_point_size
 
         filename_ext = scene.opengl_panel_settings.render_file_format
-        ofp = self.filepath + "." + filename_ext
-        log_report("INFO", "Output File Path: " + ofp, self)
+        ofp = f"{self.filepath}.{filename_ext}"
+        log_report("INFO", f"Output File Path: {ofp}", self)
 
         # Used to cache the results
         image_name = "OpenGL Export"
@@ -109,14 +109,14 @@ class ExportOpenGLRenderAnimationOperator(bpy.types.Operator, ExportHelper):
         # The export helper stores the path in self.filepath (even if it is a
         # directory)
         output_dp = self.filepath
-        log_report("INFO", "Output Directory Path: " + str(output_dp), self)
+        log_report("INFO", f"Output Directory Path: {str(output_dp)}", self)
 
         if not os.path.isdir(output_dp):
             os.mkdir(output_dp)
 
         # Used to cache the results
         image_name = "OpenGL Export"
-        ext = "." + scene.opengl_panel_settings.render_file_format
+        ext = f".{scene.opengl_panel_settings.render_file_format}"
         save_alpha = scene.opengl_panel_settings.save_alpha
         selected_cam = get_selected_camera()
         use_camera_keyframes = (
@@ -138,9 +138,7 @@ class ExportOpenGLRenderAnimationOperator(bpy.types.Operator, ExportHelper):
             current_frame_fn = str(idx).zfill(5) + ext
             current_frame_fp = os.path.join(output_dp, current_frame_fn)
 
-            log_report(
-                "INFO", "Output File Path: " + str(current_frame_fp), self
-            )
+            log_report("INFO", f"Output File Path: {str(current_frame_fp)}", self)
             render_opengl_image(
                 image_name, selected_cam, coords, colors, save_point_size
             )

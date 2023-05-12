@@ -44,10 +44,10 @@ class ImportPointDataOperator(
     def execute(self, context):
         """Import a file with point data (e.g. :code:`PLY`)."""
         path = os.path.join(self.directory, self.filepath)
-        log_report("INFO", "path: " + str(path), self)
+        log_report("INFO", f"path: {str(path)}", self)
 
         points = PointDataFileHandler.parse_point_data_file(path, self)
-        log_report("INFO", "Number points: " + str(len(points)), self)
+        log_report("INFO", f"Number points: {len(points)}", self)
 
         reconstruction_collection = add_collection("Reconstruction Collection")
         self.import_photogrammetry_points(points, reconstruction_collection)

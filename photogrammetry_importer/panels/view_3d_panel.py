@@ -30,9 +30,8 @@ class OpenGLPanelSettings(bpy.types.PropertyGroup):
     # https://docs.blender.org/api/current/bpy.props.html#getter-setter-example
     def get_viz_point_size(self):
         point_cloud_anchor = get_selected_empty()
-        if point_cloud_anchor is not None:
-            if "point_size" in point_cloud_anchor:
-                return point_cloud_anchor["point_size"]
+        if point_cloud_anchor is not None and "point_size" in point_cloud_anchor:
+            return point_cloud_anchor["point_size"]
         return 1
 
     def set_viz_point_size(self, value):

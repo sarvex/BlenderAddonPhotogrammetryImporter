@@ -49,7 +49,7 @@ def draw_points(
     log_report("INFO", "Add particle draw handlers", op)
 
     coords, colors = Point.split_points(points, normalize_colors=True)
-    object_anchor_handle = _draw_coords_with_color(
+    return _draw_coords_with_color(
         coords,
         colors,
         point_size,
@@ -58,7 +58,6 @@ def draw_points(
         object_anchor_handle_name,
         op=op,
     )
-    return object_anchor_handle
 
 
 def draw_coords(
@@ -74,8 +73,8 @@ def draw_coords(
     if len(color) == 3:
         color = (color[0], color[1], color[2], 1)
     assert len(color) == 4
-    colors = [color for coord in coords]
-    object_anchor_handle = _draw_coords_with_color(
+    colors = [color for _ in coords]
+    return _draw_coords_with_color(
         coords,
         colors,
         point_size,
@@ -84,7 +83,6 @@ def draw_coords(
         object_anchor_handle_name,
         op=op,
     )
-    return object_anchor_handle
 
 
 @persistent
@@ -93,32 +91,32 @@ def redraw_points(dummy):
 
     # This test is very cheap, so it will not cause
     # huge overheads for scenes without point clouds
-    if "contains_opengl_point_clouds" in bpy.context.scene:
+    if "contains_opengl_point_clouds" not in bpy.context.scene:
+        return
+    log_report(
+        "INFO",
+        "Checking scene for missing point cloud draw handlers",
+        op=None,
+    )
+    for obj in bpy.data.objects:
+        if (
+            "particle_coords" in obj
+            and "particle_colors" in obj
+            and "point_size" in obj
+        ):
+            coords = obj["particle_coords"]
+            colors = obj["particle_colors"]
+            point_size = obj["point_size"]
 
-        log_report(
-            "INFO",
-            "Checking scene for missing point cloud draw handlers",
-            op=None,
-        )
-        for obj in bpy.data.objects:
-            if (
-                "particle_coords" in obj
-                and "particle_colors" in obj
-                and "point_size" in obj
-            ):
-                coords = obj["particle_coords"]
-                colors = obj["particle_colors"]
-                point_size = obj["point_size"]
+            draw_manager = DrawManager.get_singleton()
+            draw_manager.register_points_draw_callback(
+                obj, coords, colors, point_size
+            )
 
-                draw_manager = DrawManager.get_singleton()
-                draw_manager.register_points_draw_callback(
-                    obj, coords, colors, point_size
-                )
-
-        for area in bpy.context.screen.areas:
-            if area.type == "VIEW_3D":
-                area.tag_redraw()
-                break
+    for area in bpy.context.screen.areas:
+        if area.type == "VIEW_3D":
+            area.tag_redraw()
+            break
 
 
 def render_opengl_image(image_name, cam, coords, colors, point_size):

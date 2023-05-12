@@ -4,32 +4,25 @@ import bpy
 def get_selected_object():
     """Get the selected object or return None."""
     selection_names = [obj.name for obj in bpy.context.selected_objects]
-    if len(selection_names) == 0:
-        return None
-    selected_obj = bpy.data.objects[selection_names[0]]
-    return selected_obj
+    return None if not selection_names else bpy.data.objects[selection_names[0]]
 
 
 def get_selected_empty():
     """Get the selected empty or return None."""
     selected_obj = get_selected_object()
-    if selected_obj is None:
+    if selected_obj is None or selected_obj.type != "EMPTY":
         return None
-    elif selected_obj.type == "EMPTY":
-        return selected_obj
     else:
-        return None
+        return selected_obj
 
 
 def get_selected_camera():
     """Get the selected camera or return None."""
     selected_obj = get_selected_object()
-    if selected_obj is None:
+    if selected_obj is None or selected_obj.type != "CAMERA":
         return None
-    elif selected_obj.type == "CAMERA":
-        return selected_obj
     else:
-        return None
+        return selected_obj
 
 
 def get_scene_animation_indices():
@@ -43,5 +36,4 @@ def get_object_animation_indices(obj):
     animation_data = obj.animation_data
     fcurves = animation_data.action.fcurves
     fcu = fcurves[0]
-    kp_indices = [int(kp.co[0]) for kp in fcu.keyframe_points]
-    return kp_indices
+    return [int(kp.co[0]) for kp in fcu.keyframe_points]

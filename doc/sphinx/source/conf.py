@@ -109,9 +109,7 @@ else:
     def maybe_skip_member(app, what, name, obj, skip, options):
         if what == "package" and name in SKIP_PACKAGE_LIST:
             return True
-        if any(
-            [name.startswith(package + ".") for package in SKIP_PACKAGE_LIST]
-        ):
+        if any(name.startswith(f"{package}.") for package in SKIP_PACKAGE_LIST):
             return True
         # Handlers should return None to fall back to the default skipping
         # behaviour of AutoAPI or another attached handler.

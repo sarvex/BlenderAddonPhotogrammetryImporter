@@ -15,13 +15,14 @@ class OpenMVGJSONFileHandler:
 
     @staticmethod
     def _get_default_polymorphic_name(intrinsics):
-        default_polymorpihc_name = None
-        for _, intrinsic in intrinsics.items():
-            if intrinsic["key"] == 0:
-                default_polymorpihc_name = intrinsic["value"][
-                    "polymorphic_name"
-                ]
-                break
+        default_polymorpihc_name = next(
+            (
+                intrinsic["value"]["polymorphic_name"]
+                for _, intrinsic in intrinsics.items()
+                if intrinsic["key"] == 0
+            ),
+            None,
+        )
         assert default_polymorpihc_name is not None
         return default_polymorpihc_name
 
@@ -50,9 +51,7 @@ class OpenMVGJSONFileHandler:
         cams = []
         # Iterate over views and create a camera if intrinsic and extrinsic
         # parameters exist
-        for id, view in views.items():  # Iterate over views
-
-            id_view = view["key"]
+        for view in views.values():
             # view["value"]["ptr_wrapper"]["data"] should be equal to
             # view["value"]["ptr_wrapper"]["data"]["id_view"]
             view_data = view["value"]["ptr_wrapper"]["data"]
@@ -60,10 +59,7 @@ class OpenMVGJSONFileHandler:
             id_intrinsic = view_data["id_intrinsic"]
 
             # Check if the view is having corresponding Pose and Intrinsic data
-            if (
-                id_pose in extrinsics.keys()
-                and id_intrinsic in intrinsics.keys()
-            ):
+            if id_pose in extrinsics and id_intrinsic in intrinsics:
 
                 camera = Camera()
 
@@ -91,10 +87,7 @@ class OpenMVGJSONFileHandler:
                     polymorphic_name = default_polymorphic_name
                     log_report(
                         "WARNING",
-                        "Key polymorphic_name in intrinsic with id "
-                        + str(id_intrinsic)
-                        + " is missing, substituting with polymorphic_name of"
-                        + " first intrinsic.",
+                        f"Key polymorphic_name in intrinsic with id {str(id_intrinsic)} is missing, substituting with polymorphic_name of first intrinsic.",
                         op,
                     )
 
@@ -146,6 +139,7 @@ class OpenMVGJSONFileHandler:
                 camera.set_camera_center_after_rotation(
                     np.array(extrinsic_params["value"]["center"], dtype=float)
                 )
+                id_view = view["key"]
                 camera.view_index = id_view
 
                 cams.append(camera)
@@ -193,9 +187,7 @@ class OpenMVGJSONFileHandler:
         """Parse an :code:`OpenMVG` (:code:`.json`) file."""
 
         log_report("INFO", "parse_openmvg_file: ...", op)
-        log_report(
-            "INFO", "input_openMVG_file_path: " + input_openMVG_file_path, op
-        )
+        log_report("INFO", f"input_openMVG_file_path: {input_openMVG_file_path}", op)
         input_file = open(input_openMVG_file_path, "r")
         json_data = json.load(input_file)
 

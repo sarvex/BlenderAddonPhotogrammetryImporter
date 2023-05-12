@@ -24,8 +24,8 @@ class Open3DFileHandler:
         only extrinsic parameters.
         """
         log_report("INFO", "parse_open3d_file: ...", op)
-        log_report("INFO", "open3d_ifp: " + open3d_ifp, op)
-        log_report("INFO", "image_dp: " + image_dp, op)
+        log_report("INFO", f"open3d_ifp: {open3d_ifp}", op)
+        log_report("INFO", f"image_dp: {image_dp}", op)
 
         image_relative_fp_list = get_image_file_paths_in_dir(
             image_dp,
@@ -52,19 +52,17 @@ class Open3DFileHandler:
 
     @staticmethod
     def _create_dummy_fp_list(num_cameras):
-        dummy_fp_list = ["img_" + str(i) for i in range(num_cameras)]
-        return dummy_fp_list
+        return [f"img_{str(i)}" for i in range(num_cameras)]
 
     @staticmethod
     def _chunker(seq, size):
-        return list(seq[pos : pos + size] for pos in range(0, len(seq), size))
+        return [seq[pos : pos + size] for pos in range(0, len(seq), size)]
 
     @staticmethod
     def _read_matrix_row(matrix_line):
         # split() without arguments splits at whitespaces and tabs
         matrix_list = matrix_line.split()
-        matrix_row = list(map(float, matrix_list))
-        return matrix_row
+        return list(map(float, matrix_list))
 
     @staticmethod
     def _parse_open3d_log_file(

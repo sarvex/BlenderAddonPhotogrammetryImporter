@@ -19,7 +19,7 @@ class _DataSemantics:
         self.pseudo_color = None
 
     def is_initialized(self):
-        return not None in [
+        return None not in [
             self.x_idx,
             self.y_idx,
             self.z_idx,
@@ -97,8 +97,10 @@ class PointDataFileHandler:
             data_semantics.pseudo_color = True
             break
         if not data_semantics.is_initialized():
-            msg = "Could not guess data semantics from tuple."
-            msg += " Consider to add a header to your input file to define position, colors, etc. \n"
+            msg = (
+                "Could not guess data semantics from tuple."
+                + " Consider to add a header to your input file to define position, colors, etc. \n"
+            )
             msg += "For example: \n"
             msg += "//X Y Z Rf Gf Bf Intensity\n"
             msg += "or: \n"
@@ -176,9 +178,7 @@ class PointDataFileHandler:
     @staticmethod
     def _convert_data_semantics_to_list(data_semantics):
 
-        named_list = [
-            "s" + str(idx) for idx in range(data_semantics.num_data_entries)
-        ]
+        named_list = [f"s{str(idx)}" for idx in range(data_semantics.num_data_entries)]
         named_list[data_semantics.x_idx] = "x"
         named_list[data_semantics.y_idx] = "y"
         named_list[data_semantics.z_idx] = "z"
@@ -245,7 +245,7 @@ class PointDataFileHandler:
             pseudo_color = False
             point_cloud = PyntCloud.from_file(ifp)
         xyz_arr = point_cloud.points.loc[:, ["x", "y", "z"]].to_numpy()
-        if set(["red", "green", "blue"]).issubset(point_cloud.points.columns):
+        if {"red", "green", "blue"}.issubset(point_cloud.points.columns):
             color_arr = point_cloud.points.loc[
                 :, ["red", "green", "blue"]
             ].to_numpy()
@@ -260,7 +260,7 @@ class PointDataFileHandler:
                 coord=xyz_arr[idx].astype("float64"),
                 color=color_arr[idx].astype("int"),
                 id=idx,
-                scalars=dict(),
+                scalars={},
             )
             points.append(point)
         log_report("INFO", f"Number Points {len(points)}", op)

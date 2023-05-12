@@ -90,10 +90,7 @@ def register():
 
     bpy.utils.register_class(OpenGLPanel)
 
-    log_report(
-        "INFO",
-        "Registered {} with {} modules".format(bl_info["name"], len(modules)),
-    )
+    log_report("INFO", f'Registered {bl_info["name"]} with {len(modules)} modules')
 
 
 def unregister():
@@ -105,7 +102,7 @@ def unregister():
 
     bpy.utils.unregister_class(OpenGLPanel)
 
-    log_report("INFO", "Unregistered {}".format(bl_info["name"]))
+    log_report("INFO", f'Unregistered {bl_info["name"]}')
 
 
 if __name__ == "__main__":

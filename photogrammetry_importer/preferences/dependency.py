@@ -40,12 +40,14 @@ def get_additional_command_line_sys_path():
 
     additional_system_paths = []
     for command_line_sys_path in command_line_sys_paths:
-        if command_line_sys_path not in blender_sys_paths:
-            if command_line_sys_path != "":
-                log_report(
-                    "INFO", f"Add missing sys.path: {command_line_sys_path}"
-                )
-                additional_system_paths.append(command_line_sys_path)
+        if (
+            command_line_sys_path not in blender_sys_paths
+            and command_line_sys_path != ""
+        ):
+            log_report(
+                "INFO", f"Add missing sys.path: {command_line_sys_path}"
+            )
+            additional_system_paths.append(command_line_sys_path)
     return additional_system_paths
 
 
@@ -309,9 +311,10 @@ class OptionalDependencyManager:
         """Install all (optional) dependencies of this addon."""
         for dependency in self.get_dependencies():
             install = False
-            if dependency_package_name == "":
-                install = True
-            elif dependency.package_name == dependency_package_name:
+            if (
+                dependency_package_name == ""
+                or dependency.package_name == dependency_package_name
+            ):
                 install = True
             if install:
                 dependency.install(op=op)
@@ -320,17 +323,16 @@ class OptionalDependencyManager:
         """Uninstall all (optional) dependencies of this addon."""
         for dependency in self.get_dependencies():
             uninstall = False
-            if dependency_package_name == "":
-                uninstall = True
-            elif dependency.package_name == dependency_package_name:
+            if (
+                dependency_package_name == ""
+                or dependency.package_name == dependency_package_name
+            ):
                 uninstall = True
             if uninstall:
                 dependency.uninstall(remove_sys_path=False, op=op)
         some_dependencies_installed = any(
-            [
-                dependency.installation_status
-                for dependency in self.get_dependencies()
-            ]
+            dependency.installation_status
+            for dependency in self.get_dependencies()
         )
         if not some_dependencies_installed:
             remove_command_line_sys_path()

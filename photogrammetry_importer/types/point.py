@@ -15,11 +15,7 @@ class Point(namedtuple("Point", ["coord", "color", "id", "scalars"])):
         coords = []
         colors = []
 
-        if normalize_colors:
-            color_normalize_factor = 255.0
-        else:
-            color_normalize_factor = 1
-
+        color_normalize_factor = 255.0 if normalize_colors else 1
         for point in points:
             coords.append(point.coord)
             color_with_alpha = [
@@ -33,10 +29,7 @@ class Point(namedtuple("Point", ["coord", "color", "id", "scalars"])):
 
     @staticmethod
     def create_points(coords, colors, unnormalize_colors=False):
-        if unnormalize_colors:
-            color_unnormalize_factor = 255.0
-        else:
-            color_unnormalize_factor = 1
+        color_unnormalize_factor = 255.0 if unnormalize_colors else 1
         return [
             Point(
                 coord=coord,
@@ -49,11 +42,9 @@ class Point(namedtuple("Point", ["coord", "color", "id", "scalars"])):
 
     @staticmethod
     def _compute_centroid_coord(points):
-        centroid = np.array(
-            sum([point.coord for point in points]) / float(len(points)),
-            dtype=float,
+        return np.array(
+            sum(point.coord for point in points) / float(len(points)), dtype=float
         )
-        return centroid
 
     @staticmethod
     def get_centered_points(points):

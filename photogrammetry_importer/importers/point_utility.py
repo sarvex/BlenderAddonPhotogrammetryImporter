@@ -115,8 +115,6 @@ def _add_particle_obj(
         bpy.ops.mesh.primitive_plane_add(size=point_scale)
     elif mesh_type == "CUBE":
         bpy.ops.mesh.primitive_cube_add(size=point_scale)
-    elif mesh_type == "SPHERE":
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=point_scale)
     else:
         bpy.ops.mesh.primitive_uv_sphere_add(radius=point_scale)
     particle_obj = bpy.context.object
@@ -268,7 +266,7 @@ def add_points_as_object_with_particle_system(
 
     bpy.context.view_layer.update()
 
-    log_report("INFO", "Duration: " + str(stop_watch.get_elapsed_time()), op)
+    log_report("INFO", f"Duration: {str(stop_watch.get_elapsed_time())}", op)
     log_report("INFO", "Adding Points as Particle System: Done", op)
     return point_cloud_obj_list
 
@@ -397,7 +395,7 @@ def add_points_as_mesh_vertices(
     if add_color_as_custom_property:
         point_cloud_obj["colors"] = colors
 
-    log_report("INFO", "Duration: " + str(stop_watch.get_elapsed_time()), op)
+    log_report("INFO", f"Duration: {str(stop_watch.get_elapsed_time())}", op)
     log_report("INFO", "Adding Points as Mesh: Done", op)
     return point_cloud_obj
 

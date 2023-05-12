@@ -31,11 +31,17 @@ class ImageFileHandler:
             height = default_height
             log_report(
                 "WARNING",
-                "Set width and height to provided default values! ("
-                + str(default_width)
-                + ", "
-                + str(default_height)
-                + ")",
+                (
+                    (
+                        (
+                            "Set width and height to provided default values! ("
+                            + str(width)
+                        )
+                        + ", "
+                    )
+                    + str(height)
+                    + ")"
+                ),
                 op,
             )
             success = True
@@ -48,11 +54,7 @@ class ImageFileHandler:
                     op,
                 )
             else:
-                log_report(
-                    "ERROR",
-                    "Corresponding image not found at: " + image_ifp,
-                    op,
-                )
+                log_report("ERROR", f"Corresponding image not found at: {image_ifp}", op)
             log_report(
                 "ERROR",
                 "Invalid default values provided for width ("

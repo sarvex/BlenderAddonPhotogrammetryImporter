@@ -24,7 +24,7 @@ class TransformationFileHandler:
 
         transformations_sorted = []
         for t_fp in t_fps:
-            log_report("INFO", "transformation file path: " + t_fp, op)
+            log_report("INFO", f"transformation file path: {t_fp}", op)
             trans_mat = np.loadtxt(t_fp, dtype="f", delimiter=" ")
             # log_report('INFO', 'transformation mat: ' + str(trans_mat), op)
             transformations_sorted.append(trans_mat)

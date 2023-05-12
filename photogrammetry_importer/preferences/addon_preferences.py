@@ -85,11 +85,7 @@ class AddonPreferences(
 
     @staticmethod
     def _get_installation_status_str(installation_status):
-        if installation_status:
-            status = "Installed"
-        else:
-            status = "Not installed"
-        return status
+        return "Installed" if installation_status else "Not installed"
 
     @staticmethod
     def _get_package_info_str(
@@ -104,14 +100,7 @@ class AddonPreferences(
                 # the setuptools package is missing
                 info_str = setuptools_missing_str
         else:
-            if info_str is None:
-                # In this case the module has not been removed in the
-                # current Blender session
-                info_str = ""
-            else:
-                # In this case the module was previously installed and has
-                # been removed in the current Blender session
-                info_str = removed_in_current_sesssion_str
+            info_str = "" if info_str is None else removed_in_current_sesssion_str
         return info_str
 
     def _draw_dependency(

@@ -236,8 +236,7 @@ def _get_reorganized_file_name(cam, common_prefix, op=None):
     unique_original_fn = unique_original_stem.replace(os.path.sep, "_")
 
     _, undistorted_ext = os.path.splitext(cam.get_undistorted_file_name())
-    reorganized_fn = unique_original_fn + undistorted_ext
-    return reorganized_fn
+    return unique_original_fn + undistorted_ext
 
 
 def _reorganize_undistorted_images(cameras_sorted, op):
@@ -259,7 +258,7 @@ def _reorganize_undistorted_images(cameras_sorted, op):
     )
     # Remove trailing slash
     reorganized_dp = os.path.dirname(common_prefix)
-    reorganized_undistorted_dp = reorganized_dp + "_restructured"
+    reorganized_undistorted_dp = f"{reorganized_dp}_restructured"
 
     log_report(
         "WARNING", f"Reorganized directory: {reorganized_undistorted_dp}", op

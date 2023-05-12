@@ -82,8 +82,7 @@ def _point_data_import_operator_function(topbar_file_import, context):
     else:
         suffix = "[Pyntcloud is NOT installed]"
     topbar_file_import.layout.operator(
-        ImportPointDataOperator.bl_idname,
-        text="Point Data " + suffix,
+        ImportPointDataOperator.bl_idname, text=f"Point Data {suffix}"
     )
 
 
@@ -114,7 +113,7 @@ class Registration:
     def _bl_idname_to_bpy_types_name(bl_idname, bpy_types_prefix):
         assert bpy_types_prefix in ["IMPORT", "EXPORT"]
         bl_idname_suffix = bl_idname.split(".")[1]
-        return bpy_types_prefix + "_SCENE_OT_" + bl_idname_suffix
+        return f"{bpy_types_prefix}_SCENE_OT_{bl_idname_suffix}"
 
     @classmethod
     def _is_registered(cls, import_or_export_operator, operator_type):
@@ -131,10 +130,9 @@ class Registration:
     def _register_importer(cls, condition, importer, append_function):
         """Register a single importer."""
         # https://blenderartists.org/t/find-out-if-a-class-is-registered/602335
-        if condition:
-            if not cls._is_registered(importer, operator_type="IMPORT"):
-                bpy.utils.register_class(importer)
-                bpy.types.TOPBAR_MT_file_import.append(append_function)
+        if condition and not cls._is_registered(importer, operator_type="IMPORT"):
+            bpy.utils.register_class(importer)
+            bpy.types.TOPBAR_MT_file_import.append(append_function)
 
     @classmethod
     def _unregister_importer(cls, importer, append_function):
@@ -147,10 +145,9 @@ class Registration:
     def _register_exporter(cls, condition, exporter, append_function):
         """Register a single exporter."""
         # https://blenderartists.org/t/find-out-if-a-class-is-registered/602335
-        if condition:
-            if not cls._is_registered(exporter, operator_type="EXPORT"):
-                bpy.utils.register_class(exporter)
-                bpy.types.TOPBAR_MT_file_export.append(append_function)
+        if condition and not cls._is_registered(exporter, operator_type="EXPORT"):
+            bpy.utils.register_class(exporter)
+            bpy.types.TOPBAR_MT_file_export.append(append_function)
 
     @classmethod
     def _unregister_exporter(cls, exporter, append_function):

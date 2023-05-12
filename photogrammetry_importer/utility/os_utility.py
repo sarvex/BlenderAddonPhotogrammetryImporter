@@ -75,11 +75,7 @@ def get_file_paths_in_dir(
         ifp_s = [os.path.splitext(ifp)[0] for ifp in ifp_s]
 
     if sort_result:
-        if natural_sorting:
-            ifp_s = sorted(ifp_s, key=_natural_key)
-        else:
-            ifp_s = sorted(ifp_s)
-
+        ifp_s = sorted(ifp_s, key=_natural_key) if natural_sorting else sorted(ifp_s)
     return ifp_s
 
 
@@ -137,7 +133,7 @@ def get_subdirs(
         sub_dps = []
         if base_name_only:
             for root, dirs, files in os.walk(idp):
-                sub_dps += [name for name in dirs]
+                sub_dps += list(dirs)
         else:
             for root, dirs, files in os.walk(idp):
                 sub_dps += [os.path.join(root, sub_dn) for sub_dn in dirs]

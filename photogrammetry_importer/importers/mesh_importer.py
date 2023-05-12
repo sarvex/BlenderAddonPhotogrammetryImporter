@@ -36,37 +36,38 @@ class MeshImporter:
 
     def import_photogrammetry_mesh(self, mesh_fp, reconstruction_collection):
         """Import a mesh using the properties of this class."""
-        if self.import_mesh and mesh_fp is not None:
-            log_report("INFO", "Importing mesh: ...", self)
-            previous_collection = bpy.context.collection
+        if not self.import_mesh or mesh_fp is None:
+            return
+        log_report("INFO", "Importing mesh: ...", self)
+        previous_collection = bpy.context.collection
 
-            if os.path.splitext(mesh_fp)[1].lower() == ".obj":
-                # https://docs.blender.org/api/current/bpy.ops.import_scene.html
-                bpy.ops.import_scene.obj(
-                    filepath=mesh_fp, axis_forward="Y", axis_up="Z"
-                )
-            elif os.path.splitext(mesh_fp)[1].lower() == ".ply":
-                # https://docs.blender.org/api/current/bpy.ops.import_mesh.html
-                bpy.ops.import_mesh.ply(filepath=mesh_fp)
-            else:
-                assert False
+        if os.path.splitext(mesh_fp)[1].lower() == ".obj":
+            # https://docs.blender.org/api/current/bpy.ops.import_scene.html
+            bpy.ops.import_scene.obj(
+                filepath=mesh_fp, axis_forward="Y", axis_up="Z"
+            )
+        elif os.path.splitext(mesh_fp)[1].lower() == ".ply":
+            # https://docs.blender.org/api/current/bpy.ops.import_mesh.html
+            bpy.ops.import_mesh.ply(filepath=mesh_fp)
+        else:
+            assert False
 
-            imported_object = bpy.context.selected_objects[-1]
-            reconstruction_collection.objects.link(imported_object)
-            previous_collection.objects.unlink(imported_object)
+        imported_object = bpy.context.selected_objects[-1]
+        reconstruction_collection.objects.link(imported_object)
+        previous_collection.objects.unlink(imported_object)
 
-            mesh_has_texture = len(imported_object.data.materials) > 0
+        mesh_has_texture = len(imported_object.data.materials) > 0
+        if mesh_has_texture:
+            if self.add_mesh_color_emission:
+                add_color_emission_to_material(imported_object)
+        else:
             mesh_has_vertex_color = "Col" in imported_object.data.vertex_colors
 
-            if mesh_has_texture:
-                if self.add_mesh_color_emission:
-                    add_color_emission_to_material(imported_object)
-            else:
-                if mesh_has_vertex_color:
-                    add_mesh_vertex_color_material(
-                        imported_object,
-                        "VertexColorMaterial",
-                        add_mesh_color_emission=self.add_mesh_color_emission,
-                    )
+            if mesh_has_vertex_color:
+                add_mesh_vertex_color_material(
+                    imported_object,
+                    "VertexColorMaterial",
+                    add_mesh_color_emission=self.add_mesh_color_emission,
+                )
 
-            log_report("INFO", "Importing mesh: Done", self)
+        log_report("INFO", "Importing mesh: Done", self)

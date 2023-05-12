@@ -25,8 +25,7 @@ def _compute_transformed_coords(object_anchor_matrix_world, positions):
 
     # Delete the homogeneous entries
     transf_pos_arr = np.delete(transf_pos_arr_hom, -1, axis=1)
-    transf_pos_list = transf_pos_arr.tolist()
-    return transf_pos_list
+    return transf_pos_arr.tolist()
 
 
 class DrawManager:
@@ -133,58 +132,55 @@ class _DrawCallBackHandler:
             handle_is_valid = False
 
         if handle_is_valid:
-            if object_anchor_name in bpy.data.objects:
+            if (
+                object_anchor_name in bpy.data.objects
+                and bpy.data.objects[object_anchor_name].visible_get()
+            ):
+                # Update the batch depending on the anchor pose (only if
+                # necessary)
+                object_anchor_has_changed = not np.array_equal(
+                    self._object_anchor_pose_previous,
+                    object_anchor.matrix_world,
+                )
+                if self._batch_cached is None or object_anchor_has_changed:
 
-                # Use the visibility of the object to enable /
-                # disable the drawing of the point cloud
-                if bpy.data.objects[object_anchor_name].visible_get():
-
-                    # Update the batch depending on the anchor pose (only if
-                    # necessary)
-                    object_anchor_has_changed = not np.array_equal(
-                        self._object_anchor_pose_previous,
-                        object_anchor.matrix_world,
+                    self._object_anchor_pose_previous = np.copy(
+                        object_anchor.matrix_world
                     )
-                    if self._batch_cached is None or object_anchor_has_changed:
+                    transf_pos_list = _compute_transformed_coords(
+                        object_anchor.matrix_world, positions
+                    )
 
-                        self._object_anchor_pose_previous = np.copy(
-                            object_anchor.matrix_world
-                        )
-                        transf_pos_list = _compute_transformed_coords(
-                            object_anchor.matrix_world, positions
-                        )
+                    self._batch_cached = batch_for_shader(
+                        self._shader,
+                        "POINTS",
+                        {"pos": transf_pos_list, "color": colors},
+                    )
 
-                        self._batch_cached = batch_for_shader(
-                            self._shader,
-                            "POINTS",
-                            {"pos": transf_pos_list, "color": colors},
-                        )
+                self._shader.bind()
+                gpu.state.point_size_set(self._point_size)
 
-                    self._shader.bind()
-                    gpu.state.point_size_set(self._point_size)
+                previous_depth_mask_value = gpu.state.depth_mask_get()
+                previous_depth_test_value = gpu.state.depth_test_get()
+                gpu.state.depth_mask_set(True)
+                gpu.state.depth_test_set("LESS_EQUAL")
 
-                    previous_depth_mask_value = gpu.state.depth_mask_get()
-                    previous_depth_test_value = gpu.state.depth_test_get()
-                    gpu.state.depth_mask_set(True)
-                    gpu.state.depth_test_set("LESS_EQUAL")
+                self._batch_cached.draw(self._shader)
 
-                    self._batch_cached.draw(self._shader)
+                gpu.state.depth_mask_set(previous_depth_mask_value)
+                gpu.state.depth_test_set(previous_depth_test_value)
 
-                    gpu.state.depth_mask_set(previous_depth_mask_value)
-                    gpu.state.depth_test_set(previous_depth_test_value)
-
-        else:
-            if self._draw_handler_handle is not None:
-                log_report(
-                    "INFO",
-                    "Removing draw handler of deleted point cloud handle",
-                )
-                bpy.types.SpaceView3D.draw_handler_remove(
-                    self._draw_handler_handle, "WINDOW"
-                )
-                self._draw_handler_handle = None
-                self._batch_cached = None
-                draw_manager.delete_anchor(object_anchor)
+        elif self._draw_handler_handle is not None:
+            log_report(
+                "INFO",
+                "Removing draw handler of deleted point cloud handle",
+            )
+            bpy.types.SpaceView3D.draw_handler_remove(
+                self._draw_handler_handle, "WINDOW"
+            )
+            self._draw_handler_handle = None
+            self._batch_cached = None
+            draw_manager.delete_anchor(object_anchor)
 
     def register_points_draw_callback(
         self, draw_manager, object_anchor, positions, colors, point_size

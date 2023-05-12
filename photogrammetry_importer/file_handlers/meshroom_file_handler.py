@@ -17,11 +17,9 @@ class MeshroomFileHandler:
 
     @staticmethod
     def _get_element(data_list, id_string, query_id):
-        result = None
-        for ele in data_list:
-            if int(ele[id_string]) == query_id:
-                result = ele
-                break
+        result = next(
+            (ele for ele in data_list if int(ele[id_string]) == query_id), None
+        )
         assert result is not None
         return result
 
@@ -177,7 +175,7 @@ class MeshroomFileHandler:
         :code:`Meshroom`.
         """
         log_report("INFO", "parse_meshroom_sfm_file: ...", op)
-        log_report("INFO", "sfm_ifp: " + sfm_ifp, op)
+        log_report("INFO", f"sfm_ifp: {sfm_ifp}", op)
         input_file = open(sfm_ifp, "r")
         json_data = json.load(input_file)
 
@@ -203,40 +201,27 @@ class MeshroomFileHandler:
     @staticmethod
     def _get_latest_node(json_graph, node_type):
         i = 0
-        while node_type + "_" + str(i + 1) in json_graph:
-            i = i + 1
-        if i == 0:
-            return None
-        else:
-            return json_graph[node_type + "_" + str(i)]
+        while f"{node_type}_{str(i + 1)}" in json_graph:
+            i += 1
+        return None if i == 0 else json_graph[f"{node_type}_{i}"]
 
     @classmethod
     def _get_node(cls, json_graph, node_type, node_number, op):
         if node_number == -1:
             return cls._get_latest_node(json_graph, node_type)
-        else:
-            node_key = node_type + "_" + str(node_number)
-            if node_key in json_graph:
-                return json_graph[node_key]
-            else:
-                log_report(
-                    "ERROR",
-                    "Invalid combination of node type (i.e. "
-                    + node_type
-                    + ") "
-                    + "and node number (i.e. "
-                    + str(node_number)
-                    + ") provided",
-                    op,
-                )
-                assert False
+        node_key = f"{node_type}_{str(node_number)}"
+        if node_key in json_graph:
+            return json_graph[node_key]
+        log_report(
+            "ERROR",
+            f"Invalid combination of node type (i.e. {node_type}) and node number (i.e. {str(node_number)}) provided",
+            op,
+        )
+        assert False
 
     @staticmethod
     def _get_data_fp_of_node(cache_dp, data_node, fn_or_fn_list):
-        if isinstance(fn_or_fn_list, str):
-            fn_list = [fn_or_fn_list]
-        else:
-            fn_list = fn_or_fn_list
+        fn_list = [fn_or_fn_list] if isinstance(fn_or_fn_list, str) else fn_or_fn_list
         if data_node is None:
             return None
         node_type = data_node["nodeType"]
@@ -254,8 +239,7 @@ class MeshroomFileHandler:
         cls, cache_dp, json_graph, node_type, node_number, fn_or_fn_list, op
     ):
         data_node = cls._get_node(json_graph, node_type, node_number, op)
-        data_fp = cls._get_data_fp_of_node(cache_dp, data_node, fn_or_fn_list)
-        return data_fp
+        return cls._get_data_fp_of_node(cache_dp, data_node, fn_or_fn_list)
 
     @staticmethod
     def _get_data_dp_of_node(cache_dp, data_node):
@@ -270,8 +254,7 @@ class MeshroomFileHandler:
         cls, cache_dp, json_graph, node_type, node_number, op
     ):
         data_node = cls._get_node(json_graph, node_type, node_number, op)
-        data_dp = cls._get_data_dp_of_node(cache_dp, data_node)
-        return data_dp
+        return cls._get_data_dp_of_node(cache_dp, data_node)
 
     @classmethod
     def _get_sfm_fp(
@@ -383,14 +366,13 @@ class MeshroomFileHandler:
 
     @classmethod
     def _get_image_dp(cls, cache_dp, json_graph, prepare_node_number, op):
-        prepare_dp = cls._get_node_data_dp(
+        return cls._get_node_data_dp(
             cache_dp,
             json_graph,
             "PrepareDenseScene",
             prepare_node_number,
             op,
         )
-        return prepare_dp
 
     @classmethod
     def parse_meshrom_mg_file(
@@ -422,7 +404,7 @@ class MeshroomFileHandler:
         )
 
         if sfm_fp is not None:
-            log_report("INFO", "Found the following sfm file: " + sfm_fp, op)
+            log_report("INFO", f"Found the following sfm file: {sfm_fp}", op)
         else:
             log_report(
                 "INFO",
@@ -432,7 +414,7 @@ class MeshroomFileHandler:
             )
 
         if mesh_fp is not None:
-            log_report("INFO", "Found the following mesh file: " + mesh_fp, op)
+            log_report("INFO", f"Found the following mesh file: {mesh_fp}", op)
         else:
             log_report(
                 "INFO",
@@ -462,7 +444,7 @@ class MeshroomFileHandler:
         Supported file formats are :code:`.mg`, :code:`.sfm` or :code:`.json`.
         """
         log_report("INFO", "parse_meshroom_file: ...", op)
-        log_report("INFO", "meshroom_ifp: " + meshroom_ifp, op)
+        log_report("INFO", f"meshroom_ifp: {meshroom_ifp}", op)
 
         ext = os.path.splitext(meshroom_ifp)[1].lower()
         if ext == ".mg":
@@ -487,7 +469,7 @@ class MeshroomFileHandler:
                 image_dp = image_idp_workspace
                 log_report("INFO", "Using image directory in workspace.", op)
         else:
-            assert ext == ".json" or ext == ".sfm"
+            assert ext in [".json", ".sfm"]
             mesh_fp = None
 
         if meshroom_ifp is not None:
